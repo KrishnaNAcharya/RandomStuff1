@@ -50,6 +50,7 @@ public class TicTacToe {
             }
 
             printGameBoard(gameBoard);
+            scan.close();
         }
     }
 
