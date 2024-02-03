@@ -1,87 +1,134 @@
-import java.util.Scanner;
+import java.util.*;
 
 public class TicTacToe {
-    private static char[][] board = {{' ', ' ', ' '}, {' ', ' ', ' '}, {' ', ' ', ' '}};
-    private static char currentPlayer = 'X';
+    static ArrayList<Integer> playerPositions = new ArrayList<Integer>();
+    static ArrayList<Integer> cpuPositions = new ArrayList<Integer>();
 
     public static void main(String[] args) {
-        Scanner scanner = new Scanner(System.in);
+        char[][] gameBoard = {
+                {' ', '|', ' ', '|', ' '},
+                {'-', '+', '-', '+', '-'},
+                {' ', '|', ' ', '|', ' '},
+                {'-', '+', '-', '+', '-'},
+                {' ', '|', ' ', '|', ' '}
+        };
+
+        printGameBoard(gameBoard);
 
         while (true) {
-            printBoard();
-            System.out.println("Player " + currentPlayer + "'s turn. Enter row (1-3) and column (1-3) separated by space:");
+            Scanner scan = new Scanner(System.in);
+            System.out.println("Enter your placement (1-9):");
+            int playerPos = scan.nextInt();
 
-            int row = scanner.nextInt() - 1;
-            int col = scanner.nextInt() - 1;
-
-            if (isValidMove(row, col)) {
-                board[row][col] = currentPlayer;
-
-                if (isWinner()) {
-                    printBoard();
-                    System.out.println("Player " + currentPlayer + " wins!");
-                    break;
-                } else if (isBoardFull()) {
-                    printBoard();
-                    System.out.println("It's a draw!");
-                    break;
-                }
-
-                currentPlayer = (currentPlayer == 'X') ? 'O' : 'X';
-            } else {
-                System.out.println("Invalid move. Try again.");
+            while (playerPositions.contains(playerPos) || cpuPositions.contains(playerPos)) {
+                System.out.println("Position taken! Enter a valid position:");
+                playerPos = scan.nextInt();
             }
-        }
 
-        scanner.close();
+            placePiece(gameBoard, playerPos, "player");
+
+            String result = checkWinner();
+            if (result.length() > 0) {
+                printGameBoard(gameBoard);
+                System.out.println(result);
+                break;
+            }
+
+            Random rand = new Random();
+            int cpuPos;
+            do {
+                cpuPos = rand.nextInt(9) + 1;
+            } while (playerPositions.contains(cpuPos) || cpuPositions.contains(cpuPos));
+
+            placePiece(gameBoard, cpuPos, "cpu");
+
+            result = checkWinner();
+            if (result.length() > 0) {
+                printGameBoard(gameBoard);
+                System.out.println(result);
+                break;
+            }
+
+            printGameBoard(gameBoard);
+        }
     }
 
-    private static void printBoard() {
-        System.out.println("-------------");
-        for (int i = 0; i < 3; i++) {
-            System.out.print("| ");
-            for (int j = 0; j < 3; j++) {
-                System.out.print(board[i][j] + " | ");
+    public static void printGameBoard(char[][] gameBoard) {
+        for (char[] row : gameBoard) {
+            for (char c : row) {
+                System.out.print(c);
             }
             System.out.println();
-            System.out.println("-------------");
         }
     }
 
-    private static boolean isValidMove(int row, int col) {
-        return row >= 0 && row < 3 && col >= 0 && col < 3 && board[row][col] == ' ';
+    public static void placePiece(char[][] gameBoard, int pos, String user) {
+        char symbol = ' ';
+        if (user.equals("player")) {
+            symbol = 'X';
+            playerPositions.add(pos);
+        } else if (user.equals("cpu")) {
+            symbol = 'O';
+            cpuPositions.add(pos);
+        }
+
+        switch (pos) {
+            case 1:
+                gameBoard[0][0] = symbol;
+                break;
+            case 2:
+                gameBoard[0][2] = symbol;
+                break;
+            case 3:
+                gameBoard[0][4] = symbol;
+                break;
+            case 4:
+                gameBoard[2][0] = symbol;
+                break;
+            case 5:
+                gameBoard[2][2] = symbol;
+                break;
+            case 6:
+                gameBoard[2][4] = symbol;
+                break;
+            case 7:
+                gameBoard[4][0] = symbol;
+                break;
+            case 8:
+                gameBoard[4][2] = symbol;
+                break;
+            case 9:
+                gameBoard[4][4] = symbol;
+                break;
+            default:
+                break;
+        }
     }
 
-    private static boolean isWinner() {
-        // Check rows, columns, and diagonals
-        for (int i = 0; i < 3; i++) {
-            if (board[i][0] != ' ' && board[i][0] == board[i][1] && board[i][1] == board[i][2]) {
-                return true; // Row win
-            }
-            if (board[0][i] != ' ' && board[0][i] == board[1][i] && board[1][i] == board[2][i]) {
-                return true; // Column win
-            }
-        }
+    public static String checkWinner() {
+        List<List<Integer>> winningConditions = Arrays.asList(
+                Arrays.asList(1, 2, 3),
+                Arrays.asList(4, 5, 6),
+                Arrays.asList(7, 8, 9),
+                Arrays.asList(1, 4, 7),
+                Arrays.asList(2, 5, 8),
+                Arrays.asList(3, 6, 9),
+                Arrays.asList(1, 5, 9),
+                Arrays.asList(3, 5, 7)
+        );
 
-        if (board[0][0] != ' ' && board[0][0] == board[1][1] && board[1][1] == board[2][2]) {
-            return true; // Diagonal win (top-left to bottom-right)
-        }
-
-        if (board[0][2] != ' ' && board[0][2] == board[1][1] && board[1][1] == board[2][0]) {
-            return true; // Diagonal win (top-right to bottom-left)
-        }
-
-        return false;
-    }
-
-    private static boolean isBoardFull() {
-        for (int i = 0; i < 3; i++) {
-            for (int j = 0; j < 3; j++) {
-                if (board[i][j] == ' ') {
-                    return false; // Empty cell found
-                }
+        for (List<Integer> condition : winningConditions) {
+            if (playerPositions.containsAll(condition)) {
+                return "Congratulations! You win!";
+            } else if (cpuPositions.containsAll(condition)) {
+                return "CPU wins! Better luck next time.";
             }
         }
-        return true; // No empty cells, board is full
+
+        if (playerPositions.size() + cpuPositions.size() == 9) {
+            return "It's a draw!";
+        }
+
+        return "";
     }
 }
